@@ -28,12 +28,12 @@ def process_image_for_low_ink(image):
     return low_ink_image
 
 def download_image(image, filename):
-    """Function to download the image."""
+    """Function to create a download link."""
     _, buffer = cv2.imencode(".png", image)
     img_bytes = buffer.tobytes()
     b64 = base64.b64encode(img_bytes).decode()
-    href = f'<a href="data:file/png;base64,{b64}" download="{filename}">Download {filename}</a>'
-    return href
+    href = f'<a href="data:file/png;base64,{b64}" download="{filename}" style="text-decoration: none;">Download {filename}</a>'
+    return href, b64
 
 def main():
     st.title("InkWise")
@@ -69,11 +69,13 @@ def main():
                 st.image(image, caption=f"Original Image: {uploaded_file.name}", use_container_width=True)
 
             with col2:
-                st.image(processed_image, caption=f"Processed Image: {uploaded_file.name}", use_container_width=True, channels="GRAY")
-
-            # Download button for each processed image
-            download_link = download_image(processed_image, f"processed_{uploaded_file.name}")
-            st.markdown(download_link, unsafe_allow_html=True)
+                download_link, b64_data = download_image(processed_image, f"processed_{uploaded_file.name}")
+                clickable_image = f"""
+                <a href="data:file/png;base64,{b64_data}" download="processed_{uploaded_file.name}">
+                    <img src="data:image/png;base64,{b64_data}" style="max-width: 100%; height: auto;" />
+                </a>
+                """
+                st.markdown(clickable_image, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
