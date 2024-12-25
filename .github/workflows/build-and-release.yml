@@ -82,8 +82,9 @@ jobs:
           else
             echo "Tag does not exist. Creating tag."
             git tag ${{ github.ref_name }}
-            git push origin ${{ github.ref_name }}
+            git push origin refs/tags/${{ github.ref_name }}
           fi
+
 
       # Step 3: Download artifacts
       - name: Download artifact
