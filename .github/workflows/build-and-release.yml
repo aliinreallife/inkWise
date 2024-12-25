@@ -39,21 +39,31 @@ jobs:
           fi
         shell: bash
 
+      - name: Debug build output
+        run: ls -R dist
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: inkWise-${{ matrix.os }}
-          path: dist/inkWise
+          path: dist/inkWise* # Adjusted to match potential file naming
+          if-no-files-found: warn
 
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           name: inkWise-${{ matrix.os }}
           path: dist/
+
+      - name: Debug downloaded artifacts
+        run: ls -R dist/
 
       - name: Create Release
         uses: ncipollo/release-action@v1
