@@ -1,0 +1,62 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.13.1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build executable
+        run: |
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            pyinstaller --onefile --add-data "wolf.ico;." --add-data "main.py;." --hidden-import="streamlit" --name "inkWise" launcher.py
+          else
+            pyinstaller --onefile --add-data "wolf.ico:." --add-data "main.py:." --hidden-import="streamlit" --name "inkWise" launcher.py
+          fi
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: inkWise-${{ matrix.os }}
+          path: dist/inkWise
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: inkWise-${{ matrix.os }}
+          path: dist/
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "dist/**/*"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
