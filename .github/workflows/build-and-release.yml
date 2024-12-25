@@ -67,31 +67,40 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Download artifacts
+      # Step 2: Fetch tags and check if tag exists
+      - name: Check if tag exists
+        run: |
+          git fetch --tags
+          if git rev-parse "refs/tags/${{ github.ref_name }}" >/dev/null 2>&1; then
+            echo "Tag already exists. Proceeding to update release."
+          else
+            echo "Tag does not exist. Creating tag."
+            git tag ${{ github.ref_name }}
+            git push origin ${{ github.ref_name }}
+
+      # Step 3: Download artifacts
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: inkWise-${{ matrix.os }}
           path: dist/
 
-      # Step 3: Debug downloaded artifacts
+      # Step 4: Debug downloaded artifacts
       - name: Debug downloaded artifacts
         run: ls -R dist/
 
-      # Step 4: Create Release
-      - name: Create Release
+      # Step 5: Create or update release
+      - name: Create or Update Release
         uses: ncipollo/release-action@v1
         with:
           artifacts: "dist/**/*"
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
+          allowUpdates: true
