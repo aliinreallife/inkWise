@@ -26,14 +26,23 @@ jobs:
         with:
           python-version: 3.11
 
-      # Step 3: Install dependencies
+      # Step 3: Cache Python dependencies
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Step 4: Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
 
-      # Step 4: Build executable
+      # Step 5: Build executable
       - name: Build executable
         run: |
           if [ "${{ runner.os }}" == "Windows" ]; then
@@ -43,11 +52,11 @@ jobs:
           fi
         shell: bash
 
-      # Step 5: Debug build output
+      # Step 6: Debug build output
       - name: Debug build output
         run: ls -R dist
 
-      # Step 6: Upload artifact
+      # Step 7: Upload artifact
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -56,11 +65,8 @@ jobs:
           if-no-files-found: warn
 
   release:
-    # Release job depends on build job
     needs: build
     runs-on: ubuntu-latest
-
-    # Ensure compatibility across OS artifacts
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
